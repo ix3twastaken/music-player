@@ -1,6 +1,8 @@
 package com.ix3twastaken.music_player.ui.components.navigation
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -26,13 +28,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.Tab
 import com.ix3twastaken.music_player.ui.screens.LibraryScreen
 import com.ix3twastaken.music_player.ui.screens.SettingsScreen
 import com.ix3twastaken.music_player.ui.screens.TracklistScreen
-
-val navigationItems = listOf("Настройки", "Библиотека", "Треки")
 
 val selectedIcons = listOf(
     Icons.Filled.Settings,
@@ -46,45 +46,39 @@ val unselectedIcons = listOf(
 )
 
 @Composable
-fun BottomNavBar(selectedTab: Int,
-                 onTabSelected: (Int) -> Unit) {
-    val navigator = LocalNavigator.currentOrThrow
+fun RowScope.TabNavigationItem(tab: Tab) {
+    val tabNavigator = LocalTabNavigator.current
 
+    NavigationBarItem(
+        modifier = Modifier.padding(top = 8.dp),
+        selected = tabNavigator.current.key == tab.key,
+        onClick = { tabNavigator.current = tab },
+        icon = { Icon(
+            modifier = Modifier.size(36.dp),
+            imageVector = if (tabNavigator.current.key == tab.key) selectedIcons[tab.options.index.toInt()] else unselectedIcons[tab.options.index.toInt()],
+            tint = MaterialTheme.colorScheme.secondary,
+            contentDescription = tab.options.title
+        ) },
+        label = { Text(tab.options.title) }
+    )
+}
+
+@Composable
+fun BottomNavBar() {
     NavigationBar(
         modifier = Modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.secondaryContainer,
         windowInsets = NavigationBarDefaults.windowInsets
     ) {
-        navigationItems.forEachIndexed { index, item ->
-            NavigationBarItem(
-                selected = selectedTab == index,
-                onClick = {
-                    onTabSelected(index)
-                    when (index) {
-                        0 -> navigator.replace(SettingsScreen())
-                        1 -> navigator.replace(LibraryScreen())
-                        2 -> navigator.replace(TracklistScreen())
-                        else -> println("Invalid destination")
-                    }
-                },
-                icon = {
-                    Icon(
-                        modifier = Modifier.size(32.dp),
-                        imageVector = if (selectedTab == index) selectedIcons[index] else unselectedIcons[index],
-                        tint = MaterialTheme.colorScheme.secondary,
-                        contentDescription = item
-                    )
-                },
-                label = { Text(item) }
-            )
-        }
+        TabNavigationItem(SettingsScreen)
+        TabNavigationItem(LibraryScreen)
+        TabNavigationItem(TracklistScreen)
     }
 }
 
-
 @Composable
-fun TopBar(selectedTabName: String, scrollBehavior: TopAppBarScrollBehavior?= null) {
+fun TopBar(title: String, scrollBehavior: TopAppBarScrollBehavior?= null) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -106,7 +100,7 @@ fun TopBar(selectedTabName: String, scrollBehavior: TopAppBarScrollBehavior?= nu
         },
         title = {
             Text(
-                selectedTabName,
+                title,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
